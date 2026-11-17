@@ -48,25 +48,31 @@ async function get(url, tok) {
   throw new Error(`Rate limited too many times on ${url}`);
 }
 
+// Spotify now blocks playlist reads for apps without a signed-in user, so we
+// take the track list from the public playlist embed, then look tracks/albums
+// up in the catalog (which still works with app credentials).
+async function playlistTrackIds() {
+  const r = await fetch(`https://open.spotify.com/embed/playlist/${PLAYLIST_ID}`, {
+    headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36" },
+  });
+  if (!r.ok) throw new Error(`Embed page -> ${r.status}`);
+  const html = await r.text();
+  const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!m) throw new Error("Embed page: no __NEXT_DATA__ found");
+  const data = JSON.parse(m[1]);
+  const list = data?.props?.pageProps?.state?.data?.entity?.trackList;
+  if (!Array.isArray(list)) throw new Error("Embed page: trackList not found; keys=" + Object.keys(data?.props?.pageProps?.state?.data?.entity || {}).join(","));
+  return list.map(t => String(t.uri || "").split(":").pop()).filter(Boolean);
+}
+
 async function playlistItems(tok) {
+  let extra = [];
+  try { extra = JSON.parse(await readFile("extras.json", "utf8"))._extraTracks || []; } catch {}
+  const ids = [...new Set([...(await playlistTrackIds()), ...extra.map(u => String(u).split(/[/:?]/).filter(Boolean).find(x => /^[A-Za-z0-9]{22}$/.test(x)))].filter(Boolean))];
   const items = [];
-  // Spotify has used both /tracks and /items for this endpoint; try both.
-  let url = null;
-  for (const path of ["tracks", "items"]) {
-    try {
-      const first = await get(`https://api.spotify.com/v1/playlists/${PLAYLIST_ID}/${path}?limit=100&market=US`, tok);
-      items.push(...first.items);
-      url = first.next;
-      break;
-    } catch (e) {
-      if (path === "items") throw e;
-      console.warn(`/${path} failed, trying next endpoint: ${e.message}`);
-    }
-  }
-  while (url) {
-    const page = await get(url, tok);
-    items.push(...page.items);
-    url = page.next;
+  for (let i = 0; i < ids.length; i += 50) {
+    const page = await get(`https://api.spotify.com/v1/tracks?ids=${ids.slice(i, i + 50).join(",")}&market=US`, tok);
+    items.push(...page.tracks.map(t => ({ track: t })));
   }
   return items;
 }
