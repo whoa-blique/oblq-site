@@ -65,15 +65,22 @@ async function playlistTrackIds() {
   return list.map(t => String(t.uri || "").split(":").pop()).filter(Boolean);
 }
 
+let embedCount = 0;
+const skipped = [];
 async function playlistItems(tok) {
   let extra = [];
   try { extra = JSON.parse(await readFile("extras.json", "utf8"))._extraTracks || []; } catch {}
   const ids = [...new Set([...(await playlistTrackIds()), ...extra.map(u => String(u).split(/[/:?]/).filter(Boolean).find(x => /^[A-Za-z0-9]{22}$/.test(x)))].filter(Boolean))];
   const items = [];
-  for (let i = 0; i < ids.length; i += 50) {
-    const page = await get(`https://api.spotify.com/v1/tracks?ids=${ids.slice(i, i + 50).join(",")}&market=US`, tok);
-    items.push(...page.tracks.map(t => ({ track: t })));
+  for (const id of ids) {
+    try {
+      items.push({ track: await get(`https://api.spotify.com/v1/tracks/${id}?market=US`, tok) });
+    } catch (e) {
+      console.warn(`Skipping track ${id}: ${e.message}`);
+      skipped.push(id);
+    }
   }
+  embedCount = ids.length;
   return items;
 }
 
@@ -128,4 +135,4 @@ for (const r of releases.values()) {
 out.sort((a, b) => b.date.localeCompare(a.date) || a.order - b.order);
 await writeFile("releases.json", JSON.stringify(out, null, 2) + "\n");
 console.log(`Wrote ${out.length} releases.`);
-await writeFile("build-status.json", JSON.stringify({ ok: true, releases: out.length, playlistItems: items.length, at: new Date().toISOString() }, null, 2));
+await writeFile("build-status.json", JSON.stringify({ ok: true, releases: out.length, playlistItems: items.length, embedTracks: embedCount, skipped, at: new Date().toISOString() }, null, 2));
