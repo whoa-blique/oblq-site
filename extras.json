@@ -2,14 +2,73 @@
   "_help": "Match a release by its exact Spotify title (or album ID). You can add links, a role, or \"hide\": true. Link keys: youtube, apple, youtubeMusic, amazon, tidal, soundcloud, bandcamp, deezer.",
   "Never Finished": {
     "role": "Production, Engineering",
-    "links": { "youtube": "https://www.youtube.com/watch?v=qDrNBtBYSRs&list=OLAK5uy_nNTbEUUsVKugu5B7LwVonPFbIg8ymGTCc" }
+    "links": {
+      "youtube": "https://www.youtube.com/watch?v=qDrNBtBYSRs&list=OLAK5uy_nNTbEUUsVKugu5B7LwVonPFbIg8ymGTCc"
+    }
   },
   "Head Up High": {
     "role": "Production, Engineering",
-    "links": { "youtube": "https://youtu.be/9Bgd8aQKVXo" }
+    "links": {
+      "youtube": "https://youtu.be/9Bgd8aQKVXo"
+    }
   },
   "Faulty Reflections": {
     "role": "Main Artist, Production, Writing, Engineering",
-    "links": { "youtube": "https://youtube.com/playlist?list=PL_Z-2eSxvJZCI2i4-OOVE9uwTCWCJqrnV" }
-  }
+    "links": {
+      "youtube": "https://youtube.com/playlist?list=PL_Z-2eSxvJZCI2i4-OOVE9uwTCWCJqrnV"
+    }
+  },
+  "_extraSongs": [
+    {
+      "track": "Yellow Trees",
+      "artist": "Oblique",
+      "album": "Back"
+    },
+    {
+      "track": "Kilroy",
+      "artist": "Oblique",
+      "album": "Beat Tape, Vol. 1"
+    },
+    {
+      "track": "Make This Right",
+      "artist": "Haley Sorg",
+      "album": "Make This Right"
+    },
+    {
+      "track": "Summer With You",
+      "artist": "Haley Sorg",
+      "album": "Summer With You"
+    },
+    {
+      "track": "Back 2 Me",
+      "artist": "Haley Sorg",
+      "album": "Back 2 Me"
+    },
+    {
+      "track": "The One That I Want",
+      "artist": "Zeper",
+      "album": "The One That I Want"
+    },
+    {
+      "track": "For Your Love",
+      "artist": "Haley Sorg",
+      "album": "For Your Love"
+    },
+    {
+      "track": "First Mistake",
+      "artist": "Oblique",
+      "album": "First Mistake"
+    },
+    {
+      "track": "Troublemaker",
+      "artist": "Oblique",
+      "album": "Troublemaker"
+    },
+    {
+      "track": "Gone Yesterday",
+      "artist": "Oblique",
+      "album": "Last Call"
+    }
+  ],
+  "_help2": "_extraSongs: songs past #100 in the playlist (Spotify's public playlist view stops at 100). One song per release is enough."
 }

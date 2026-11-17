@@ -67,6 +67,8 @@ async function playlistTrackIds() {
 
 let embedCount = 0;
 const skipped = [];
+const notFound = [];
+const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 async function playlistItems(tok) {
   let extra = [];
   try { extra = JSON.parse(await readFile("extras.json", "utf8"))._extraTracks || []; } catch {}
@@ -81,10 +83,25 @@ async function playlistItems(tok) {
     }
   }
   embedCount = ids.length;
+  // Songs past #100 (the public embed stops there): find them by search.
+  let songs = [];
+  try { songs = JSON.parse(await readFile("extras.json", "utf8"))._extraSongs || []; } catch {}
+  for (const s of songs) {
+    const q = encodeURIComponent(`track:${s.track} artist:${s.artist}`);
+    try {
+      const res = await get(`https://api.spotify.com/v1/search?q=${q}&type=track&limit=10&market=US`, tok);
+      const hits = res.tracks?.items || [];
+      const want = norm(s.album || s.track);
+      const hit = hits.find(t => norm(t.album?.name) === want) || hits.find(t => norm(t.name) === norm(s.track)) || hits[0];
+      if (hit) items.push({ track: hit, extra: true });
+      else notFound.push(s);
+    } catch (e) {
+      console.warn(`Search failed for ${s.track}: ${e.message}`);
+      notFound.push({ ...s, error: e.message.slice(0, 200) });
+    }
+  }
   return items;
 }
-
-const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 const tok = await token();
 const items = await playlistItems(tok);
@@ -135,4 +152,4 @@ for (const r of releases.values()) {
 out.sort((a, b) => b.date.localeCompare(a.date) || a.order - b.order);
 await writeFile("releases.json", JSON.stringify(out, null, 2) + "\n");
 console.log(`Wrote ${out.length} releases.`);
-await writeFile("build-status.json", JSON.stringify({ ok: true, releases: out.length, playlistItems: items.length, embedTracks: embedCount, skipped, at: new Date().toISOString() }, null, 2));
+await writeFile("build-status.json", JSON.stringify({ ok: true, releases: out.length, playlistItems: items.length, embedTracks: embedCount, skipped, notFound, at: new Date().toISOString() }, null, 2));
