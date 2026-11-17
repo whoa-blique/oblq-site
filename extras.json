@@ -1,0 +1,15 @@
+{
+  "_help": "Match a release by its exact Spotify title (or album ID). You can add links, a role, or \"hide\": true. Link keys: youtube, apple, youtubeMusic, amazon, tidal, soundcloud, bandcamp, deezer.",
+  "Never Finished": {
+    "role": "Production, Engineering",
+    "links": { "youtube": "https://www.youtube.com/watch?v=qDrNBtBYSRs&list=OLAK5uy_nNTbEUUsVKugu5B7LwVonPFbIg8ymGTCc" }
+  },
+  "Head Up High": {
+    "role": "Production, Engineering",
+    "links": { "youtube": "https://youtu.be/9Bgd8aQKVXo" }
+  },
+  "Faulty Reflections": {
+    "role": "Main Artist, Production, Writing, Engineering",
+    "links": { "youtube": "https://youtube.com/playlist?list=PL_Z-2eSxvJZCI2i4-OOVE9uwTCWCJqrnV" }
+  }
+}

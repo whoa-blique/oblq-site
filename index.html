@@ -131,7 +131,7 @@
   }
   .modal.open .sheet { transform: scale(1); }
   .sheet .art { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
-  .sheet .art.ph { font-size: 18px; }
+  .sheet .art.ph { font-size: 18px; display: flex; }
   .details h2 { font-size: clamp(22px, 3vw, 32px); line-height: 1.1; }
   .details .m-artist { color: #cfcfcf; margin-top: 6px; font-size: 17px; }
   .details .m-meta { color: var(--muted); margin-top: 10px; font-size: 14px; }
@@ -179,49 +179,11 @@
 
 <script>
 /* =====================================================================
-   YOUR WORKS
-   To add a release: copy one block, fill it in, and put the cover image
-   in assets/covers/. The grid sorts itself newest → oldest by `date`.
-   Any link you leave out simply won't show a button.
+   Releases come from releases.json, which GitHub rebuilds every day from
+   the "Produced by Oblique" Spotify playlist (see scripts/build-releases.mjs).
+   To add YouTube/Apple links or hide something, edit extras.json.
    ===================================================================== */
-const WORKS = [
-  {
-    title: "Never Finished (feat. Cheno Royal)",
-    artist: "Extraordinary",
-    role: "Production, Engineering",
-    date: "2024-03",            // year-month is fine — used only for sorting
-    cover: "assets/covers/never-finished.jpg",
-    links: {
-      youtube: "https://www.youtube.com/watch?v=qDrNBtBYSRs&list=OLAK5uy_nNTbEUUsVKugu5B7LwVonPFbIg8ymGTCc",
-      spotify: "",
-      apple: "",
-    },
-  },
-  {
-    title: "Head Up High",
-    artist: "Extraordinary",
-    role: "Production, Engineering",
-    date: "2024-02",
-    cover: "assets/covers/head-up-high.jpg",
-    links: {
-      youtube: "https://youtu.be/9Bgd8aQKVXo",
-      spotify: "",
-      apple: "",
-    },
-  },
-  {
-    title: "Faulty Reflections EP",
-    artist: "Miraflores",
-    role: "Main Artist, Production, Writing, Engineering",
-    date: "2024-01",
-    cover: "assets/covers/faulty-reflections.jpg",
-    links: {
-      youtube: "https://youtube.com/playlist?list=PL_Z-2eSxvJZCI2i4-OOVE9uwTCWCJqrnV",
-      spotify: "",
-      apple: "",
-    },
-  },
-];
+let WORKS = [];
 
 /* Names shown on the listen buttons, in display order */
 const PLATFORMS = {
@@ -234,6 +196,7 @@ const PLATFORMS = {
   soundcloud: "SoundCloud",
   bandcamp: "Bandcamp",
   deezer: "Deezer",
+  all: "All platforms",
 };
 
 /* ===================================================================== */
@@ -250,8 +213,9 @@ function coverHTML(w, cls) {
     onerror="this.outerHTML='<div class=&quot;${cls} ph&quot;>${esc(esc(w.title))}</div>'">`;
 }
 
-const sorted = [...WORKS].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+let sorted = [];
 
+function render() {
 grid.innerHTML = sorted.map((w, i) => `
   <li>
     <button class="work" data-i="${i}" aria-label="${esc(w.title)} by ${esc(w.artist)}">
@@ -262,6 +226,16 @@ grid.innerHTML = sorted.map((w, i) => `
       </span>
     </button>
   </li>`).join("");
+}
+
+fetch("releases.json", { cache: "no-cache" })
+  .then(r => r.json())
+  .then(data => {
+    WORKS = data;
+    sorted = [...WORKS].sort((a, b) => String(b.date).localeCompare(String(a.date)) || (a.order ?? 0) - (b.order ?? 0));
+    render();
+  })
+  .catch(() => { grid.innerHTML = '<li class="m-meta" style="grid-column:1/-1;text-align:center">Releases are loading — check back in a minute.</li>'; });
 
 let lastFocus = null;
 
@@ -276,6 +250,7 @@ function openWork(i) {
     <div class="details">
       <h2 id="m-title">${esc(w.title)}</h2>
       <div class="m-artist">${esc(w.artist)}</div>
+      ${w.year ? `<div class="m-meta">${esc(w.year)}${w.type ? " · " + esc(w.type) : ""}</div>` : ""}
       ${w.role ? `<div class="m-meta">${esc(w.role)}</div>` : ""}
       <div class="listen">
         <div class="listen-label">Listen on</div>
