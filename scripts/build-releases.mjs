@@ -10,10 +10,16 @@ import { readFile, writeFile } from "node:fs/promises";
 const PLAYLIST_ID = "3X37nb4RLvwoxeBsE5Cv2y";
 const { SPOTIFY_CLIENT_ID: id, SPOTIFY_CLIENT_SECRET: secret } = process.env;
 
-if (!id || !secret) {
-  console.error("Missing SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET secrets.");
-  process.exit(1);
+process.on("uncaughtException", fail);
+process.on("unhandledRejection", fail);
+async function fail(e) {
+  const msg = String(e && e.stack || e).replace(/Basic [A-Za-z0-9+/=]+/g, "Basic ***");
+  console.error(msg);
+  await writeFile("build-status.json", JSON.stringify({ ok: false, error: msg, at: new Date().toISOString() }, null, 2));
+  process.exit(0); // still deploy, so the error can be seen at /build-status.json
 }
+
+if (!id || !secret) throw new Error(`Missing secrets: id=${!!id} secret=${!!secret}`);
 
 async function token() {
   const r = await fetch("https://accounts.spotify.com/api/token", {
@@ -116,3 +122,4 @@ for (const r of releases.values()) {
 out.sort((a, b) => b.date.localeCompare(a.date) || a.order - b.order);
 await writeFile("releases.json", JSON.stringify(out, null, 2) + "\n");
 console.log(`Wrote ${out.length} releases.`);
+await writeFile("build-status.json", JSON.stringify({ ok: true, releases: out.length, playlistItems: items.length, at: new Date().toISOString() }, null, 2));
