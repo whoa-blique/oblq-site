@@ -176,14 +176,42 @@
   }
 
   footer { text-align: center; color: #555; font-size: 12px; letter-spacing: .15em; padding: 0 20px 40px; }
+
+  /* ---------- Beat pad (click the OBLQ diamond) ---------- */
+  .logo-wrap { position: relative; }
+  .diamond {
+    position: absolute; top: 0; bottom: 0; left: 70%; right: 0;
+    background: none; border: 0; cursor: pointer; border-radius: 50%;
+  }
+  .logo-wrap .logo { transition: filter .25s ease; }
+  .logo-wrap:has(.diamond:hover) .logo { filter: drop-shadow(0 0 10px rgba(255,255,255,.35)); }
+  .diamond:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
+  .pad-modal .pad-box { text-align: center; }
+  .pad-title { font-size: 11px; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; margin-bottom: 18px; }
+  .pads {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    width: min(420px, 86vw); margin: 0 auto;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  .pad {
+    aspect-ratio: 1/1; border: 1px solid #333; background: #121212; color: var(--fg);
+    font: inherit; font-size: clamp(18px, 4vw, 26px); font-weight: 700; letter-spacing: .05em;
+    cursor: pointer; border-radius: 10px; -webkit-tap-highlight-color: transparent;
+    transition: background .12s ease, transform .06s ease, box-shadow .12s ease;
+  }
+  .pad:hover { border-color: #555; }
+  .pad.hit { background: var(--fg); color: var(--bg); transform: scale(.96); box-shadow: 0 0 28px rgba(255,255,255,.35); transition: none; }
+  .pad-hint { margin-top: 16px; font-size: 12px; color: #666; }
+  @media (hover: none) { .pad-hint .kbd { display: none; } }
 </style>
 </head>
 <body>
 
 <header>
-  <div id="brand-oblique" class="brand">
+  <div id="brand-oblique" class="brand logo-wrap">
     <img class="logo" src="assets/logo.png" alt="OBLQ Productions"
          onerror="this.outerHTML='<div class=&quot;logo-fallback&quot;>OBLQ<small>PRODUCTIONS</small></div>'">
+    <button class="diamond" id="diamond" aria-label="Open the beat pad"></button>
   </div>
   <div id="brand-miraflores" class="brand" hidden>
     <img class="logo" src="assets/miraflores-logo.png" alt="Miraflores"
@@ -210,6 +238,15 @@
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
   <button class="close" id="close" aria-label="Close">×</button>
   <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="modal pad-modal" id="padModal" role="dialog" aria-modal="true" aria-label="Beat pad">
+  <button class="close" id="padClose" aria-label="Close">×</button>
+  <div class="pad-box">
+    <div class="pad-title">OBLQ Beat Pad</div>
+    <div class="pads" id="pads"></div>
+    <div class="pad-hint"><span class="kbd">Use Q W E · A S D · Z X C, or </span>tap the pads</div>
+  </div>
 </div>
 
 <script>
@@ -331,6 +368,64 @@ grid.addEventListener("click", e => {
 document.getElementById("close").addEventListener("click", closeModal);
 modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.classList.contains("open")) closeModal(); });
+
+/* ===================== Beat pad ===================== */
+(() => {
+  const KEYS = ["Q","W","E","A","S","D","Z","X","C"];
+  const padModal = document.getElementById("padModal");
+  const padsEl = document.getElementById("pads");
+  padsEl.innerHTML = KEYS.map((k, i) => `<button class="pad" data-i="${i}" aria-label="Pad ${k}">${k}</button>`).join("");
+  const padBtns = [...padsEl.children];
+  let ctx = null, buffers = [], loading = null;
+
+  function load() {
+    if (loading) return loading;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC();
+    loading = Promise.all(KEYS.map((_, i) =>
+      fetch(`assets/pads/pad${i + 1}.wav`).then(r => r.arrayBuffer())
+        .then(b => new Promise((res, rej) => ctx.decodeAudioData(b, res, rej)))
+        .then(buf => (buffers[i] = buf))
+        .catch(() => {})
+    ));
+    return loading;
+  }
+  function hit(i) {
+    if (!ctx) load();
+    if (ctx.state === "suspended") ctx.resume();
+    const buf = buffers[i];
+    if (buf) { const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(); }
+    const b = padBtns[i];
+    b.classList.remove("hit"); void b.offsetWidth; b.classList.add("hit");
+    clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove("hit"), 110);
+  }
+  function openPad() {
+    load(); if (ctx.state === "suspended") ctx.resume();
+    padModal.classList.add("open"); document.body.style.overflow = "hidden";
+    document.getElementById("padClose").focus();
+  }
+  function closePad() { padModal.classList.remove("open"); document.body.style.overflow = ""; }
+
+  document.getElementById("diamond").addEventListener("click", openPad);
+  document.getElementById("padClose").addEventListener("click", closePad);
+  padModal.addEventListener("click", e => { if (e.target === padModal) closePad(); });
+  // pointerdown = no tap delay on phones; ignore the follow-up click
+  padsEl.addEventListener("pointerdown", e => {
+    const b = e.target.closest(".pad"); if (!b) return;
+    e.preventDefault(); hit(+b.dataset.i);
+  });
+  padsEl.addEventListener("click", e => {
+    const b = e.target.closest(".pad");
+    if (b && e.detail === 0) hit(+b.dataset.i); // keyboard Enter/Space on a focused pad
+  });
+  document.addEventListener("keydown", e => {
+    if (!padModal.classList.contains("open")) return;
+    if (e.key === "Escape") return closePad();
+    if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    const i = KEYS.indexOf(e.key.toUpperCase());
+    if (i >= 0) { e.preventDefault(); hit(i); }
+  });
+})();
 </script>
 </body>
 </html>
