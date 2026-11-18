@@ -155,6 +155,20 @@
   .credits { margin-top: 20px; }
   .credits ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .credits li { font-size: 13px; padding: 5px 10px; border: 1px solid var(--line); color: #ddd; }
+  .dl { margin-top: 22px; }
+  .dl-row { display: flex; gap: 8px; margin-top: 8px; }
+  .dl-row a, .dl-tracks a {
+    flex: 1; text-align: center; padding: 11px 10px; border: 1px solid var(--line);
+    color: var(--fg); text-decoration: none; font-size: 14px; transition: background .2s ease, border-color .2s ease;
+  }
+  .dl-row a:hover, .dl-tracks a:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.4); }
+  .dl-row a small { color: var(--muted); }
+  .dl details { margin-top: 10px; }
+  .dl summary { cursor: pointer; font-size: 13px; color: #cfcfcf; padding: 6px 0; }
+  .dl-tracks { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .dl-tracks li { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .dl-tracks li span { flex: 1; min-width: 0; color: #ddd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dl-tracks a { flex: 0 0 auto; padding: 5px 9px; font-size: 12px; }
   .listen { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
   .listen-label { font-size: 11px; letter-spacing: .25em; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
   .listen a {
@@ -427,6 +441,22 @@ window.addEventListener("hashchange", showTab);
 showTab();
 
 let lastFocus = null;
+let DOWNLOADS = {};
+fetch("downloads.json", { cache: "no-cache" }).then(r => r.json()).then(d => { DOWNLOADS = d; }).catch(() => {});
+
+function downloadsHTML(w) {
+  const d = DOWNLOADS[w.id];
+  if (!d) return "";
+  const fmts = ["MP3", "WAV"];
+  const zips = fmts.filter(f => d.zip && d.zip[f])
+    .map(f => `<a href="${esc(d.zip[f])}" download>${f} <small>· full ${d.tracks.length > 1 ? "release" : "single"} (.zip)</small></a>`).join("");
+  const tracks = (d.tracks || []).map(t => `<li><span title="${esc(t.name)}">${esc(t.name)}</span>${fmts.filter(f => t[f]).map(f => `<a href="${esc(t[f])}" download>${f}</a>`).join("")}</li>`).join("");
+  const many = (d.tracks || []).length > 2 || zips;
+  return `<div class="dl"><div class="listen-label">Download</div>
+    ${zips ? `<div class="dl-row">${zips}</div>` : ""}
+    ${tracks ? (many ? `<details><summary>Single tracks</summary><ul class="dl-tracks">${tracks}</ul></details>` : `<ul class="dl-tracks">${tracks}</ul>`) : ""}
+  </div>`;
+}
 
 function openWork(i) {
   const w = sorted[i];
@@ -445,6 +475,7 @@ function openWork(i) {
         <div class="listen-label">Listen on</div>
         ${links || `<div class="m-meta">Links coming soon.</div>`}
       </div>
+      ${downloadsHTML(w)}
     </div>`;
   lastFocus = document.activeElement;
   modal.classList.add("open");
