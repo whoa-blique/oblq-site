@@ -70,5 +70,19 @@
       "album": "Last Call"
     }
   ],
-  "_help2": "_extraSongs: songs past #100 in the playlist (Spotify's public playlist view stops at 100). One song per release is enough."
+  "_help2": "_extraSongs: songs past #100 in the playlist (Spotify's public playlist view stops at 100). One song per release is enough.",
+  "_mythryxExtra": [
+    {
+      "title": "Myxtape 3",
+      "artist": "mythryx",
+      "type": "Album",
+      "date": "2026-11-07",
+      "year": "2026",
+      "cover": "https://f4.bcbits.com/img/a3321382361_10.jpg",
+      "links": {
+        "bandcamp": "https://mythryx.bandcamp.com/album/myxtape-3"
+      }
+    }
+  ],
+  "_help3": "_mythryxExtra: Mythryx releases not on Spotify yet. Once it's on Spotify, the Spotify version is used and these links are added to it."
 }

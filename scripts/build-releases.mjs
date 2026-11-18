@@ -181,6 +181,14 @@ try {
 } catch (e) { mythError = e.message.slice(0, 300); console.warn("Mythryx search failed:", e.message); }
 const mythOut = [...myth.values()].filter(r => !(extras[r.id] || extrasByName[norm(r.title)])?.hide);
 for (const r of mythOut) { const x = extras[r.id]; if (x?.links) Object.assign(r.links, x.links); if (x?.role) r.role = x.role; }
+for (const x of extras._mythryxExtra || []) {
+  const same = mythOut.find(r => norm(r.title) === norm(x.title));
+  if (same) Object.assign(same.links, x.links || {});
+  else mythOut.push({ id: "extra-" + norm(x.title).replace(/ /g, "-"), order: 999, ...x, links: { ...(x.links || {}) } });
+}
+// Bandcamp links for everything on the mythryx Bandcamp page
+const BC = { "myxtape 2": "myxtape-2", "thanks 4 having me": "thanks-4-having-me", "myxtape 3": "myxtape-3" };
+for (const r of mythOut) if (BC[norm(r.title)] && !r.links.bandcamp) r.links.bandcamp = `https://mythryx.bandcamp.com/album/${BC[norm(r.title)]}`;
 mythOut.sort((a, b) => b.date.localeCompare(a.date));
 if (mythOut.length || !mythError) await writeFile("mythryx.json", JSON.stringify(mythOut, null, 2) + "\n");
 console.log(`Wrote ${out.length} releases.`);
