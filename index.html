@@ -506,7 +506,7 @@ function downloadsHTML(w) {
   if (!d) return "";
   const fmts = ["MP3", "WAV"];
   const zips = fmts.filter(f => d.zip && d.zip[f])
-    .map(f => `<a href="${esc(d.zip[f])}" download>${f} <small>· full ${d.tracks.length > 1 ? "release" : "single"} (.zip)</small></a>`).join("");
+    .map(f => `<a href="${esc(d.zip[f])}" download>${f} <small>· full ${/pack/i.test(w.type || "") ? "pack" : d.tracks.length === 1 ? "single" : "release"} (.zip)</small></a>`).join("");
   const tracks = (d.tracks || []).map(t => `<li><span title="${esc(t.name)}">${esc(t.name)}</span>${fmts.filter(f => t[f]).map(f => `<a href="${esc(t[f])}" download>${f}</a>`).join("")}</li>`).join("");
   const many = (d.tracks || []).length > 2 || zips;
   return `<div class="dl"><div class="listen-label">Download</div>
@@ -528,7 +528,7 @@ function openWork(i) {
       <div class="m-artist">${esc(w.artist)}</div>
       ${w.year ? `<div class="m-meta">${esc(w.year)}${w.type ? " · " + esc(w.type) : ""}</div>` : ""}
       ${w.role ? `<div class="credits"><div class="listen-label">My credits</div><ul>${w.role.split(/,\s*/).map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
-      ${w.secret && !links ? "" : `<div class="listen">
+      ${!links && DOWNLOADS[w.id] ? "" : `<div class="listen">
         <div class="listen-label">Listen on</div>
         ${links || `<div class="m-meta">Links coming soon.</div>`}
       </div>`}

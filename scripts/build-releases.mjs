@@ -196,6 +196,11 @@ const miraOut = applyExtras([...miraMap.values()]);
 for (const r of miraOut) releases.delete(r.id);
 
 const out = applyExtras([...releases.values()]);
+for (const x of extras._obliqueExtra || []) {
+  if (out.some(r => norm(r.title) === norm(x.title))) continue;
+  out.push({ id: "extra-" + norm(x.title).replace(/ /g, "-"), order: 999, ...x, links: { ...(x.links || {}) } });
+}
+out.sort((a, b) => b.date.localeCompare(a.date) || a.order - b.order);
 await writeFile("releases.json", JSON.stringify(out, null, 2) + "\n");
 if (miraOut.length || !errors.miraflores) await writeFile("miraflores.json", JSON.stringify(miraOut, null, 2) + "\n");
 
