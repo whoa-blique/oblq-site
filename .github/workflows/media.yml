@@ -1,0 +1,72 @@
+name: Media (R2) - set up and upload videos
+
+# media/queue.json holds videos to upload: [{ "file": "videos/name.mp4", "url": "<temporary download link>" }]
+# Each one is downloaded, converted to a web-friendly MP4 (+ a .jpg thumbnail), and put in R2.
+
+on:
+  push:
+    branches: [main]
+    paths: ["media/**", ".github/workflows/media.yml"]
+  workflow_dispatch:
+
+concurrency: { group: media, cancel-in-progress: false }
+
+jobs:
+  media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install tools
+        run: |
+          npm i -g wrangler@4 >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg jq >/dev/null
+      - name: Make sure the R2 bucket exists
+        id: bucket
+        run: |
+          if wrangler r2 bucket list 2>&1 | tee list.txt | grep -q "oblq-media"; then
+            echo "Bucket already exists"; echo "ok=true" >> "$GITHUB_OUTPUT"
+          elif wrangler r2 bucket create oblq-media 2>&1 | tee create.txt; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            if grep -qi "10042\|enable R2\|R2 is not enabled\|purchase" create.txt list.txt; then
+              echo "::error title=R2 not enabled::Turn on R2 in the Cloudflare dashboard (R2 Object Storage), then re-run."
+            else
+              echo "::error title=Bucket error::$(tail -3 create.txt | tr '\n' ' ')"
+            fi
+            echo "ok=false" >> "$GITHUB_OUTPUT"; exit 1
+          fi
+      - name: Deploy media server
+        working-directory: media
+        run: |
+          OUT=$(wrangler deploy 2>&1); echo "$OUT"
+          URL=$(echo "$OUT" | grep -oE 'https://[a-z0-9.-]+\.workers\.dev' | head -1)
+          echo "::notice title=Media URL::$URL"
+      - name: Convert and upload queued videos
+        run: |
+          n=$(jq length media/queue.json)
+          echo "Queued: $n"
+          for i in $(seq 0 $((n-1))); do
+            file=$(jq -r ".[$i].file" media/queue.json); url=$(jq -r ".[$i].url" media/queue.json)
+            echo "::add-mask::$url"
+            if wrangler r2 object get "oblq-media/$file" --remote --pipe 2>/dev/null | head -c 1 | grep -q .; then
+              echo "Already uploaded: $file"; continue
+            fi
+            echo "== $file"
+            curl -fsSL "$url" -o src.bin
+            ffmpeg -v error -y -i src.bin -map 0:v:0 -map 0:a:0? \
+              -vf "scale='min(1920,iw)':-2" -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p \
+              -c:a aac -b:a 192k -movflags +faststart out.mp4
+            ffmpeg -v error -y -ss 3 -i out.mp4 -frames:v 1 -vf "scale='min(1280,iw)':-2" -q:v 3 thumb.jpg || ffmpeg -v error -y -i out.mp4 -frames:v 1 thumb.jpg
+            dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 out.mp4 | cut -d. -f1)
+            ls -lh out.mp4 thumb.jpg
+            wrangler r2 object put "oblq-media/$file" --file out.mp4 --content-type video/mp4 --remote
+            wrangler r2 object put "oblq-media/${file%.*}.jpg" --file thumb.jpg --content-type image/jpeg --remote
+            echo "::notice title=Uploaded::$file ($(du -h out.mp4 | cut -f1), ${dur}s)"
+            rm -f src.bin out.mp4 thumb.jpg
+          done

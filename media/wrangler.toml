@@ -1,0 +1,8 @@
+name = "oblq-media"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "oblq-media"
