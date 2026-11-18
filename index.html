@@ -17,6 +17,7 @@
     --gap: clamp(10px, 2vw, 22px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
   html, body { background: var(--bg); color: var(--fg); }
   body {
     font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
@@ -124,7 +125,7 @@
 
   /* ---------- Modal ---------- */
   .modal {
-    position: fixed; inset: 0; z-index: 10;
+    position: fixed; inset: 0; z-index: 30;
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
     background: rgba(5,5,5,.88);
@@ -175,6 +176,40 @@
     .sheet .art { max-width: 420px; margin: 0 auto; }
   }
 
+  /* ---------- Site menu ---------- */
+  .menu-btn {
+    position: fixed; top: 16px; right: 18px; z-index: 20;
+    width: 44px; height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+    background: rgba(10,10,10,.75); border: 1px solid var(--line); cursor: pointer;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  .menu-btn span { width: 20px; height: 2px; background: var(--fg); transition: transform .2s ease, opacity .2s ease; }
+  .menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .menu-panel {
+    position: fixed; top: 68px; right: 18px; z-index: 20; min-width: 240px;
+    display: flex; flex-direction: column; background: #111; border: 1px solid var(--line);
+  }
+  .menu-panel[hidden] { display: none; }
+  .menu-panel a { color: var(--fg); text-decoration: none; padding: 14px 18px; font-size: 14px; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
+  .menu-panel a:last-child { border-bottom: 0; }
+  .menu-panel a:hover, .menu-panel a[aria-current="page"] { background: var(--fg); color: var(--bg); }
+
+  /* ---------- Movie watchlist ---------- */
+  .movies { max-width: 1100px; margin: 0 auto; padding: clamp(80px, 10vw, 110px) var(--gap) 80px; }
+  .movies-title { text-align: center; font-size: clamp(26px, 5vw, 44px); font-weight: 500; letter-spacing: .02em; margin-bottom: clamp(28px, 5vw, 48px); }
+  .favs { border: 1px solid var(--line); padding: clamp(14px, 3vw, 24px); margin-bottom: clamp(28px, 5vw, 48px); }
+  .favs .listen-label { text-align: center; margin-bottom: 16px; }
+  .favs-grid { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+  @media (max-width: 520px) { .favs-grid { grid-template-columns: repeat(2, 1fr); } }
+  .film img, .film .ph { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background: #151515; }
+  .film .ph { display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; color: #555; font-size: 13px; }
+  .film-name { margin-top: 10px; font-size: 15px; line-height: 1.25; }
+  .film-rating { margin-top: 4px; color: #d9b44a; font-size: 15px; letter-spacing: .08em; }
+  .film-year { color: var(--muted); font-size: 13px; margin-left: 4px; }
+  .movie-grid .film-name { font-size: clamp(13px, 1.6vw, 16px); }
+
   footer { text-align: center; color: #555; font-size: 12px; letter-spacing: .15em; padding: 0 20px 40px; }
 
   /* ---------- Beat pad (click the OBLQ diamond) ---------- */
@@ -214,6 +249,14 @@
 </head>
 <body>
 
+<button class="menu-btn" id="menuBtn" aria-label="Open site menu" aria-expanded="false" aria-controls="menuPanel">
+  <span></span><span></span><span></span>
+</button>
+<nav class="menu-panel" id="menuPanel" aria-label="Site directory" hidden>
+  <a href="#oblique" data-nav="home">Home</a>
+  <a href="#movies" data-nav="movies" id="navMovies" hidden>Oblique's Movie Watchlist</a>
+</nav>
+
 <header>
   <div id="brand-oblique" class="brand logo-wrap">
     <img class="logo" src="assets/logo.png" alt="OBLQ Productions"
@@ -236,9 +279,18 @@
   <a href="#miraflores" role="tab" data-tab="miraflores">Miraflores</a>
 </nav>
 
-<main>
+<main id="musicView">
   <ul class="grid" id="grid"></ul>
 </main>
+
+<section id="moviesView" class="movies" hidden>
+  <h1 class="movies-title">Oblique's Movie Watchlist</h1>
+  <div class="favs" id="favsBox" hidden>
+    <div class="listen-label">Favorite Movies Of All Time</div>
+    <ul class="favs-grid" id="favs"></ul>
+  </div>
+  <ul class="grid movie-grid" id="movieGrid"></ul>
+</section>
 
 <footer>© <span id="yr"></span> <span id="foot">OBLQ PRODUCTIONS</span></footer>
 
@@ -322,6 +374,12 @@ const TABS = {
 const cache = {};
 
 function showTab() {
+  const isMovies = location.hash === "#movies";
+  document.querySelectorAll("header, .tabs, #musicView").forEach(el => el.hidden = isMovies);
+  document.getElementById("moviesView").hidden = !isMovies;
+  document.querySelectorAll(".menu-panel a").forEach(a => a.removeAttribute("aria-current"));
+  document.querySelector(`.menu-panel a[data-nav="${isMovies ? "movies" : "home"}"]`).setAttribute("aria-current", "page");
+  if (isMovies) { showMovies(); return; }
   const key = TABS[location.hash.slice(1)] ? location.hash.slice(1) : "oblique";
   document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-selected", a.dataset.tab === key));
   document.querySelectorAll(".brand").forEach(b => b.hidden = b.id !== "brand-" + key);
@@ -339,6 +397,46 @@ function showTab() {
     grid.innerHTML = '<li class="m-meta" style="grid-column:1/-1;text-align:center">Releases are loading — check back in a minute.</li>';
   });
 }
+/* ---------- Movie watchlist (#movies), data from movies.json ---------- */
+let moviesLoad = null;
+const getMovies = () => moviesLoad || (moviesLoad = fetch("movies.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).catch(() => null));
+const stars = r => r == null || r === "" ? "" : "★".repeat(Math.floor(r)) + (r % 1 ? "½" : "");
+function filmHTML(f, showRating) {
+  const img = f.poster
+    ? `<img src="${esc(f.poster)}" alt="${esc(f.title)} poster" loading="lazy" onerror="this.outerHTML='<div class=&quot;ph&quot;>${esc(esc(f.title))}</div>'">`
+    : `<div class="ph">${esc(f.title)}</div>`;
+  return `<li class="film">${img}
+    <div class="film-name">${esc(f.title)}${f.year ? `<span class="film-year">${esc(f.year)}</span>` : ""}</div>
+    ${showRating && f.rating != null ? `<div class="film-rating" aria-label="${f.rating} out of 5 stars">${stars(f.rating)}</div>` : ""}</li>`;
+}
+function showMovies() {
+  document.title = "Oblique's Movie Watchlist";
+  document.getElementById("foot").textContent = "OBLQ PRODUCTIONS";
+  getMovies().then(d => {
+    const g = document.getElementById("movieGrid");
+    if (!d) { g.innerHTML = '<li class="m-meta" style="grid-column:1/-1;text-align:center">Watchlist coming soon.</li>'; return; }
+    const favs = d.favorites || [];
+    document.getElementById("favsBox").hidden = !favs.length;
+    document.getElementById("favs").innerHTML = favs.map(f => filmHTML(f, false)).join("");
+    const films = [...(d.films || [])].sort((a, b) => String(b.ratedDate).localeCompare(String(a.ratedDate)));
+    g.innerHTML = films.map(f => filmHTML(f, true)).join("");
+  });
+}
+getMovies().then(d => { if (d && (d.films || []).length) document.getElementById("navMovies").hidden = false; });
+
+/* ---------- Site menu ---------- */
+const menuBtn = document.getElementById("menuBtn"), menuPanel = document.getElementById("menuPanel");
+function setMenu(open) { menuPanel.hidden = !open; menuBtn.setAttribute("aria-expanded", open); menuBtn.setAttribute("aria-label", open ? "Close site menu" : "Open site menu"); }
+menuBtn.addEventListener("click", e => { e.stopPropagation(); setMenu(menuPanel.hidden); });
+menuPanel.addEventListener("click", e => {
+  const a = e.target.closest("a"); if (!a) return;
+  setMenu(false);
+  if (a.dataset.nav === "home") { e.preventDefault(); location.hash = "oblique"; window.scrollTo(0, 0); }
+  else window.scrollTo(0, 0);
+});
+document.addEventListener("click", e => { if (!menuPanel.hidden && !menuPanel.contains(e.target)) setMenu(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !menuPanel.hidden) setMenu(false); });
+
 window.addEventListener("hashchange", showTab);
 showTab();
 
