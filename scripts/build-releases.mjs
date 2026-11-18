@@ -151,5 +151,37 @@ for (const r of releases.values()) {
 
 out.sort((a, b) => b.date.localeCompare(a.date) || a.order - b.order);
 await writeFile("releases.json", JSON.stringify(out, null, 2) + "\n");
+
+// ---- Mythryx: every release by the mythryx artist, found via search ----
+const MYTHRYX_ID = "4Y7GkJ69ijDLsgGqAd21yC";
+const myth = new Map();
+let mythError = null;
+try {
+  for (const type of ["album", "track"]) {
+    for (let offset = 0; offset < 50; offset += 10) {
+      const res = await get(`https://api.spotify.com/v1/search?q=${encodeURIComponent("artist:mythryx")}&type=${type}&limit=10&offset=${offset}&market=US`, tok);
+      const list = type === "album" ? (res.albums?.items || []) : (res.tracks?.items || []).map(t => t.album);
+      for (const a of list) {
+        if (!a || !(a.artists || []).some(x => x.id === MYTHRYX_ID)) continue;
+        if (!myth.has(a.id)) myth.set(a.id, {
+          id: a.id,
+          title: a.name,
+          artist: (a.artists || []).map(x => x.name).join(", "),
+          type: a.album_type === "single" ? (a.total_tracks > 1 ? "EP" : "Single") : "Album",
+          date: a.release_date || "",
+          year: (a.release_date || "").slice(0, 4),
+          cover: (a.images && a.images[0] && a.images[0].url) || "",
+          order: myth.size,
+          links: { spotify: a.external_urls?.spotify || `https://open.spotify.com/album/${a.id}`, all: `https://album.link/s/${a.id}` },
+        });
+      }
+      if (list.length < 10) break;
+    }
+  }
+} catch (e) { mythError = e.message.slice(0, 300); console.warn("Mythryx search failed:", e.message); }
+const mythOut = [...myth.values()].filter(r => !(extras[r.id] || extrasByName[norm(r.title)])?.hide);
+for (const r of mythOut) { const x = extras[r.id]; if (x?.links) Object.assign(r.links, x.links); if (x?.role) r.role = x.role; }
+mythOut.sort((a, b) => b.date.localeCompare(a.date));
+if (mythOut.length || !mythError) await writeFile("mythryx.json", JSON.stringify(mythOut, null, 2) + "\n");
 console.log(`Wrote ${out.length} releases.`);
-await writeFile("build-status.json", JSON.stringify({ ok: true, releases: out.length, playlistItems: items.length, embedTracks: embedCount, skipped, notFound, at: new Date().toISOString() }, null, 2));
+await writeFile("build-status.json", JSON.stringify({ ok: true, releases: out.length, mythryx: mythOut.length, mythError, playlistItems: items.length, embedTracks: embedCount, skipped, notFound, at: new Date().toISOString() }, null, 2));
