@@ -201,6 +201,13 @@
   }
   .pad:hover { border-color: #555; }
   .pad.hit { background: var(--fg); color: var(--bg); transform: scale(.96); box-shadow: 0 0 28px rgba(255,255,255,.35); transition: none; }
+  .pad-layout { display: flex; align-items: center; justify-content: center; gap: clamp(20px, 4vw, 40px); }
+  .sheet-music { text-align: left; }
+  @media (min-width: 681px) { .sheet-notes { white-space: nowrap; } }
+  .sheet-label { font-size: 11px; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  .sheet-notes { font-size: 18px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg); word-break: break-all; line-height: 1.6;
+    border: 1px solid var(--line); padding: 12px 14px; }
+  @media (max-width: 680px) { .pad-layout { flex-direction: column; } .sheet-music { text-align: center; } }
   .pad-hint { margin-top: 16px; font-size: 12px; color: #666; }
   @media (hover: none) { .pad-hint .kbd { display: none; } }
 </style>
@@ -243,8 +250,14 @@
 <div class="modal pad-modal" id="padModal" role="dialog" aria-modal="true" aria-label="Beat pad">
   <button class="close" id="padClose" aria-label="Close">×</button>
   <div class="pad-box">
-    <div class="pad-title">OBLQ Beat Pad</div>
-    <div class="pads" id="pads"></div>
+    <div class="pad-title">“For Your Love” Chopped</div>
+    <div class="pad-layout">
+      <div class="pads" id="pads"></div>
+      <aside class="sheet-music" aria-label="Sheet music">
+        <div class="sheet-label">Sheet Music</div>
+        <div class="sheet-notes">qwwweassddzxxcc</div>
+      </aside>
+    </div>
     <div class="pad-hint"><span class="kbd">Use Q W E · A S D · Z X C, or </span>tap the pads</div>
   </div>
 </div>
@@ -376,7 +389,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.clas
   const padsEl = document.getElementById("pads");
   padsEl.innerHTML = KEYS.map((k, i) => `<button class="pad" data-i="${i}" aria-label="Pad ${k}">${k}</button>`).join("");
   const padBtns = [...padsEl.children];
-  let ctx = null, buffers = [], loading = null;
+  let ctx = null, buffers = [], loading = null, current = null;
 
   function load() {
     if (loading) return loading;
@@ -394,7 +407,9 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.clas
     if (!ctx) load();
     if (ctx.state === "suspended") ctx.resume();
     const buf = buffers[i];
-    if (buf) { const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(); }
+    // Monophonic: stop whatever is playing before starting the new hit
+    if (current) { try { current.stop(); } catch {} current = null; }
+    if (buf) { const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(); current = s; s.onended = () => { if (current === s) current = null; }; }
     const b = padBtns[i];
     b.classList.remove("hit"); void b.offsetWidth; b.classList.add("hit");
     clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove("hit"), 110);
