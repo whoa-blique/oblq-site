@@ -1,19 +1,19 @@
 {
   "_help": "Match a release by its exact Spotify title (or album ID). You can add links, a role, or \"hide\": true. Link keys: youtube, apple, youtubeMusic, amazon, tidal, soundcloud, bandcamp, deezer.",
   "Never Finished": {
-    "role": "Production, Engineering",
+    "role": "Producer, Engineer",
     "links": {
       "youtube": "https://www.youtube.com/watch?v=qDrNBtBYSRs&list=OLAK5uy_nNTbEUUsVKugu5B7LwVonPFbIg8ymGTCc"
     }
   },
   "Head Up High": {
-    "role": "Production, Engineering",
+    "role": "Producer, Engineer",
     "links": {
       "youtube": "https://youtu.be/9Bgd8aQKVXo"
     }
   },
   "Faulty Reflections": {
-    "role": "Main Artist, Production, Writing, Engineering",
+    "role": "Main Artist, Producer, Engineer, Cover Art",
     "links": {
       "youtube": "https://youtube.com/playlist?list=PL_Z-2eSxvJZCI2i4-OOVE9uwTCWCJqrnV"
     }
@@ -84,5 +84,147 @@
       }
     }
   ],
-  "_help3": "_mythryxExtra: Mythryx releases not on Spotify yet. Once it's on Spotify, the Spotify version is used and these links are added to it."
+  "_help3": "_mythryxExtra: Mythryx releases not on Spotify yet. Once it's on Spotify, the Spotify version is used and these links are added to it.",
+  "Last Call": {
+    "role": "Main Artist, Producer, Engineer"
+  },
+  "Troublemaker": {
+    "role": "Main Artist, Producer, Engineer"
+  },
+  "For Your Love": {
+    "role": "Producer, Engineer"
+  },
+  "First Mistake": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "The One That I Want": {
+    "role": "Engineer"
+  },
+  "Back 2 Me": {
+    "role": "Producer, Engineer"
+  },
+  "Summer With You": {
+    "role": "Producer"
+  },
+  "Beat Tape, Vol. 1": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "Back": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "Make This Right": {
+    "role": "Producer"
+  },
+  "Forever": {
+    "role": "Producer, Engineer, Cover Art"
+  },
+  "111": {
+    "role": "Producer, Engineer, Cover Art"
+  },
+  "Look at Me Now": {
+    "role": "Producer, Engineer, Cover Art"
+  },
+  "June (Oblique Remix)": {
+    "role": "Producer, Engineer"
+  },
+  "Break Me Down": {
+    "role": "Producer, Engineer on \"Chance on Me\""
+  },
+  "111: The Instrumentals": {
+    "role": "Producer, Engineer, Cover Art"
+  },
+  "Act Da Fool": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "Jiffy Pop": {
+    "role": "Producer, Engineer"
+  },
+  "Drowning": {
+    "role": "Producer, Engineer"
+  },
+  "y-000": {
+    "role": "Main Artist, Producer, Engineer"
+  },
+  "All Your Love": {
+    "role": "Producer, Engineer"
+  },
+  "Make It": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "Don't Sleep": {
+    "role": "Producer, Engineer"
+  },
+  "Royal Lake Cypher": {
+    "role": "Producer, Engineer"
+  },
+  "HELLO": {
+    "role": "Producer, Engineer"
+  },
+  "No Stopping Me": {
+    "role": "Producer, Engineer"
+  },
+  "In My Head": {
+    "role": "Producer, Engineer"
+  },
+  "KEEP UP": {
+    "role": "Producer, Engineer"
+  },
+  "X-RAY": {
+    "role": "Producer, Engineer"
+  },
+  "NO DRIVE": {
+    "role": "Remixer"
+  },
+  "188": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "Walls": {
+    "role": "Producer, Engineer"
+  },
+  "Going With The Flow": {
+    "role": "Producer, Engineer"
+  },
+  "No Turning Back": {
+    "role": "Producer, Engineer"
+  },
+  "ICU": {
+    "role": "Producer, Engineer"
+  },
+  "Get Away": {
+    "role": "Producer, Engineer"
+  },
+  "Indecisive": {
+    "role": "Producer, Engineer"
+  },
+  "Alive": {
+    "role": "Producer, Engineer"
+  },
+  "Something There - Slowed & Reverbed": {
+    "role": "Producer, Engineer"
+  },
+  "You'll Know It When It Happens": {
+    "role": "Main Artist, Producer, Engineer"
+  },
+  "WHIPLASH": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "MOBLQ": {
+    "role": "Producer, Engineer"
+  },
+  "Brain Soup (Oblique Remix)": {
+    "role": "Remixer"
+  },
+  "Beat Tape, Vol. 2 (YKIWIH)": {
+    "role": "Main Artist, Producer, Engineer"
+  },
+  "U Fade the Pain": {
+    "role": "Main Artist, Producer, Engineer, Cover Art"
+  },
+  "_extraSearches": [
+    {
+      "tab": "miraflores",
+      "track": "Over You",
+      "artist": "Miraflores"
+    }
+  ]
 }

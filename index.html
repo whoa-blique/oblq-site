@@ -37,6 +37,7 @@
   }
   .tabs a:hover { color: var(--fg); }
   .tabs a[aria-selected="true"] { color: var(--fg); border-color: var(--line); }
+  .miraflores-word { font-size: clamp(36px, 8vw, 84px); letter-spacing: .3em; font-weight: 400; padding-left: .3em; }
   .mythryx-word { font-weight: 700; letter-spacing: .04em; text-transform: lowercase; }
 
   /* ---------- Header / logo ---------- */
@@ -150,6 +151,9 @@
   .details h2 { font-size: clamp(22px, 3vw, 32px); line-height: 1.1; }
   .details .m-artist { color: #cfcfcf; margin-top: 6px; font-size: 17px; }
   .details .m-meta { color: var(--muted); margin-top: 10px; font-size: 14px; }
+  .credits { margin-top: 20px; }
+  .credits ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .credits li { font-size: 13px; padding: 5px 10px; border: 1px solid var(--line); color: #ddd; }
   .listen { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
   .listen-label { font-size: 11px; letter-spacing: .25em; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
   .listen a {
@@ -181,6 +185,10 @@
     <img class="logo" src="assets/logo.png" alt="OBLQ Productions"
          onerror="this.outerHTML='<div class=&quot;logo-fallback&quot;>OBLQ<small>PRODUCTIONS</small></div>'">
   </div>
+  <div id="brand-miraflores" class="brand" hidden>
+    <img class="logo" src="assets/miraflores-logo.png" alt="Miraflores"
+         onerror="this.outerHTML='<div class=&quot;logo-fallback miraflores-word&quot;>MIRAFLORES</div>'">
+  </div>
   <div id="brand-mythryx" class="brand" hidden>
     <img class="logo" src="assets/mythryx-logo.png" alt="mythryx"
          onerror="this.outerHTML='<div class=&quot;logo-fallback mythryx-word&quot;>mythryx</div>'">
@@ -190,6 +198,7 @@
 <nav class="tabs" role="tablist" aria-label="Projects">
   <a href="#oblique" role="tab" data-tab="oblique">Oblique</a>
   <a href="#mythryx" role="tab" data-tab="mythryx">Mythryx</a>
+  <a href="#miraflores" role="tab" data-tab="miraflores">Miraflores</a>
 </nav>
 
 <main>
@@ -258,6 +267,7 @@ grid.innerHTML = sorted.map((w, i) => `
 const TABS = {
   oblique: { file: "releases.json", title: "OBLQ Productions", foot: "OBLQ PRODUCTIONS" },
   mythryx: { file: "mythryx.json", title: "mythryx", foot: "MYTHRYX" },
+  miraflores: { file: "miraflores.json", title: "Miraflores", foot: "MIRAFLORES" },
 };
 const cache = {};
 
@@ -296,7 +306,7 @@ function openWork(i) {
       <h2 id="m-title">${esc(w.title)}</h2>
       <div class="m-artist">${esc(w.artist)}</div>
       ${w.year ? `<div class="m-meta">${esc(w.year)}${w.type ? " · " + esc(w.type) : ""}</div>` : ""}
-      ${w.role ? `<div class="m-meta">${esc(w.role)}</div>` : ""}
+      ${w.role ? `<div class="credits"><div class="listen-label">My credits</div><ul>${w.role.split(/,\s*/).map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
       <div class="listen">
         <div class="listen-label">Listen on</div>
         ${links || `<div class="m-meta">Links coming soon.</div>`}

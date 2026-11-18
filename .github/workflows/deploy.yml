@@ -34,7 +34,8 @@ jobs:
           mkdir _site
           [ -f releases.json ] || echo "[]" > releases.json
           [ -f mythryx.json ] || echo "[]" > mythryx.json
-          cp -r index.html assets releases.json mythryx.json build-status.json _site/
+          [ -f miraflores.json ] || echo "[]" > miraflores.json
+          cp -r index.html assets releases.json mythryx.json miraflores.json build-status.json _site/
           [ -f CNAME ] && cp CNAME _site/ || true
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
