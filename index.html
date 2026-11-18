@@ -7,7 +7,7 @@
 <meta name="description" content="Productions, engineering and releases from OBLQ Productions.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0a0a0a;
@@ -196,20 +196,15 @@
   .menu-panel a:last-child { border-bottom: 0; }
   .menu-panel a:hover, .menu-panel a[aria-current="page"] { background: var(--fg); color: var(--bg); }
 
-  /* ---------- Movie watchlist ---------- */
-  .movies { max-width: 1100px; margin: 0 auto; padding: clamp(80px, 10vw, 110px) var(--gap) 80px; }
-  .movies-title { text-align: center; font-size: clamp(26px, 5vw, 44px); font-weight: 500; letter-spacing: .02em; margin-bottom: clamp(28px, 5vw, 48px); }
-  .favs { border: 1px solid var(--line); padding: clamp(14px, 3vw, 24px); margin-bottom: clamp(28px, 5vw, 48px); }
-  .favs .listen-label { text-align: center; margin-bottom: 16px; }
-  .favs-grid { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
-  @media (max-width: 520px) { .favs-grid { grid-template-columns: repeat(2, 1fr); } }
-  .film img, .film .ph { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background: #151515; }
-  .film .ph { display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; color: #555; font-size: 13px; }
-  .film-name { margin-top: 10px; font-size: 15px; line-height: 1.25; }
-  .film-rating { margin-top: 4px; color: #d9b44a; font-size: 15px; letter-spacing: .08em; }
-  .film-year { color: var(--muted); font-size: 13px; margin-left: 4px; }
-  .movie-grid .film-name { font-size: clamp(13px, 1.6vw, 16px); }
-
+  /* ---------- Retro page-visits counter ---------- */
+  .visits { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 0 20px 22px; }
+  .visits-label { font-family: "Times New Roman", Times, serif; font-size: 18px; color: #e6e6e6; }
+  .odometer { display: inline-flex; gap: 2px; background: #000; padding: 3px; border: 1px solid #333; }
+  .odometer b {
+    font-family: "VT323", "Courier New", monospace; font-weight: 400; font-size: 26px; line-height: 1;
+    color: #39ff14; text-shadow: 0 0 4px rgba(57,255,20,.7);
+    background: #0a1a0a; border: 1px solid #1f3d1f; padding: 2px 4px 0; min-width: 18px; text-align: center;
+  }
   footer { text-align: center; color: #555; font-size: 12px; letter-spacing: .15em; padding: 0 20px 40px; }
 
   /* ---------- Beat pad (click the OBLQ diamond) ---------- */
@@ -254,7 +249,7 @@
 </button>
 <nav class="menu-panel" id="menuPanel" aria-label="Site directory" hidden>
   <a href="#oblique" data-nav="home">Home</a>
-  <a href="#movies" data-nav="movies" id="navMovies" hidden>Oblique's Movie Watchlist</a>
+  <a href="https://letterboxd.com/oblique260/" target="_blank" rel="noopener" data-nav="movies">Oblique's Movie Watchlist <span aria-hidden="true">↗</span></a>
 </nav>
 
 <header>
@@ -283,15 +278,11 @@
   <ul class="grid" id="grid"></ul>
 </main>
 
-<section id="moviesView" class="movies" hidden>
-  <h1 class="movies-title">Oblique's Movie Watchlist</h1>
-  <div class="favs" id="favsBox" hidden>
-    <div class="listen-label">Favorite Movies Of All Time</div>
-    <ul class="favs-grid" id="favs"></ul>
-  </div>
-  <ul class="grid movie-grid" id="movieGrid"></ul>
-</section>
 
+<div class="visits" id="visits" hidden>
+  <span class="visits-label">Page Visits:</span>
+  <span class="odometer" id="odometer" aria-live="polite"></span>
+</div>
 <footer>© <span id="yr"></span> <span id="foot">OBLQ PRODUCTIONS</span></footer>
 
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
@@ -374,12 +365,6 @@ const TABS = {
 const cache = {};
 
 function showTab() {
-  const isMovies = location.hash === "#movies";
-  document.querySelectorAll("header, .tabs, #musicView").forEach(el => el.hidden = isMovies);
-  document.getElementById("moviesView").hidden = !isMovies;
-  document.querySelectorAll(".menu-panel a").forEach(a => a.removeAttribute("aria-current"));
-  document.querySelector(`.menu-panel a[data-nav="${isMovies ? "movies" : "home"}"]`).setAttribute("aria-current", "page");
-  if (isMovies) { showMovies(); return; }
   const key = TABS[location.hash.slice(1)] ? location.hash.slice(1) : "oblique";
   document.querySelectorAll(".tabs a").forEach(a => a.setAttribute("aria-selected", a.dataset.tab === key));
   document.querySelectorAll(".brand").forEach(b => b.hidden = b.id !== "brand-" + key);
@@ -397,33 +382,6 @@ function showTab() {
     grid.innerHTML = '<li class="m-meta" style="grid-column:1/-1;text-align:center">Releases are loading — check back in a minute.</li>';
   });
 }
-/* ---------- Movie watchlist (#movies), data from movies.json ---------- */
-let moviesLoad = null;
-const getMovies = () => moviesLoad || (moviesLoad = fetch("movies.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).catch(() => null));
-const stars = r => r == null || r === "" ? "" : "★".repeat(Math.floor(r)) + (r % 1 ? "½" : "");
-function filmHTML(f, showRating) {
-  const img = f.poster
-    ? `<img src="${esc(f.poster)}" alt="${esc(f.title)} poster" loading="lazy" onerror="this.outerHTML='<div class=&quot;ph&quot;>${esc(esc(f.title))}</div>'">`
-    : `<div class="ph">${esc(f.title)}</div>`;
-  return `<li class="film">${img}
-    <div class="film-name">${esc(f.title)}${f.year ? `<span class="film-year">${esc(f.year)}</span>` : ""}</div>
-    ${showRating && f.rating != null ? `<div class="film-rating" aria-label="${f.rating} out of 5 stars">${stars(f.rating)}</div>` : ""}</li>`;
-}
-function showMovies() {
-  document.title = "Oblique's Movie Watchlist";
-  document.getElementById("foot").textContent = "OBLQ PRODUCTIONS";
-  getMovies().then(d => {
-    const g = document.getElementById("movieGrid");
-    if (!d) { g.innerHTML = '<li class="m-meta" style="grid-column:1/-1;text-align:center">Watchlist coming soon.</li>'; return; }
-    const favs = d.favorites || [];
-    document.getElementById("favsBox").hidden = !favs.length;
-    document.getElementById("favs").innerHTML = favs.map(f => filmHTML(f, false)).join("");
-    const films = [...(d.films || [])].sort((a, b) => String(b.ratedDate).localeCompare(String(a.ratedDate)));
-    g.innerHTML = films.map(f => filmHTML(f, true)).join("");
-  });
-}
-getMovies().then(d => { if (d && (d.films || []).length) document.getElementById("navMovies").hidden = false; });
-
 /* ---------- Site menu ---------- */
 const menuBtn = document.getElementById("menuBtn"), menuPanel = document.getElementById("menuPanel");
 function setMenu(open) { menuPanel.hidden = !open; menuBtn.setAttribute("aria-expanded", open); menuBtn.setAttribute("aria-label", open ? "Close site menu" : "Open site menu"); }
@@ -432,10 +390,24 @@ menuPanel.addEventListener("click", e => {
   const a = e.target.closest("a"); if (!a) return;
   setMenu(false);
   if (a.dataset.nav === "home") { e.preventDefault(); location.hash = "oblique"; window.scrollTo(0, 0); }
-  else window.scrollTo(0, 0);
 });
 document.addEventListener("click", e => { if (!menuPanel.hidden && !menuPanel.contains(e.target)) setMenu(false); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !menuPanel.hidden) setMenu(false); });
+
+/* ---------- Page visits counter (abacus.jasoncameron.dev) ---------- */
+(() => {
+  const NS = "obliquemusicproduction", KEY = "visits";
+  let counted = false;
+  try { counted = sessionStorage.getItem("oblq-counted") === "1"; } catch {}
+  fetch(`https://abacus.jasoncameron.dev/${counted ? "get" : "hit"}/${NS}/${KEY}`).then(r => r.json()).then(d => {
+    if (typeof d.value !== "number") return;
+    try { sessionStorage.setItem("oblq-counted", "1"); } catch {}
+    const od = document.getElementById("odometer");
+    od.innerHTML = [...String(d.value).padStart(7, "0")].map(n => `<b>${n}</b>`).join("");
+    od.setAttribute("aria-label", `${d.value} page visits`);
+    document.getElementById("visits").hidden = false;
+  }).catch(() => {});
+})();
 
 window.addEventListener("hashchange", showTab);
 showTab();
