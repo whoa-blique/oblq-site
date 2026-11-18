@@ -63,6 +63,16 @@
     margin-top: 0.6em;
   }
 
+  .lock { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0 20px; }
+  .lock p { color: var(--muted); font-size: 14px; letter-spacing: .2em; text-transform: uppercase; }
+  .lock form { display: flex; gap: 8px; }
+  .lock input { background: transparent; border: 1px solid var(--line); color: var(--fg); padding: 11px 14px; font: inherit; font-size: 15px; width: min(260px, 60vw); }
+  .lock input:focus { outline: none; border-color: rgba(255,255,255,.5); }
+  .lock button { background: var(--fg); color: #000; border: 0; padding: 0 18px; font: inherit; font-size: 14px; cursor: pointer; }
+  .lock .err { color: #e66; font-size: 13px; letter-spacing: 0; text-transform: none; min-height: 1em; }
+  .lock.shake form { animation: shake .35s; }
+  @keyframes shake { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }
+
   /* ---------- Grid of works ---------- */
   main { max-width: 1100px; margin: 0 auto; padding: 0 var(--gap) 80px; }
   .grid {
@@ -283,12 +293,16 @@
     <img class="logo" src="assets/mythryx-logo.png" alt="mythryx"
          onerror="this.outerHTML='<div class=&quot;logo-fallback mythryx-word&quot;>mythryx</div>'">
   </div>
+  <div id="brand-secret" class="brand" hidden>
+    <div class="logo-fallback">SECRET<small>AUTHORIZED LISTENERS ONLY</small></div>
+  </div>
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Projects">
   <a href="#oblique" role="tab" data-tab="oblique">Oblique</a>
   <a href="#mythryx" role="tab" data-tab="mythryx">Mythryx</a>
   <a href="#miraflores" role="tab" data-tab="miraflores">Miraflores</a>
+  <a href="#secret" role="tab" data-tab="secret">SECRET</a>
 </nav>
 
 <main id="musicView">
@@ -378,11 +392,51 @@ grid.innerHTML = sorted.map((w, i) => `
 }
 
 /* Tabs: #oblique (default) and #mythryx. Each loads its own data file. */
+const DOWNLOADS = {};
+fetch("downloads.json", { cache: "no-cache" }).then(r => r.json()).then(d => { Object.assign(DOWNLOADS, d); }).catch(() => {});
 const TABS = {
   oblique: { file: "releases.json", title: "OBLQ Productions", foot: "OBLQ PRODUCTIONS" },
   mythryx: { file: "mythryx.json", title: "mythryx", foot: "MYTHRYX" },
   miraflores: { file: "miraflores.json", title: "Miraflores", foot: "MIRAFLORES" },
+  secret: { file: "secret.enc.json", title: "SECRET", foot: "SECRET", locked: true },
 };
+
+/* ---------- SECRET tab: data is AES-encrypted; the password unlocks it in the browser ---------- */
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function decryptSecret(pass) {
+  const enc = await fetch("secret.enc.json", { cache: "no-cache" }).then(r => r.json());
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64d(enc.salt), iterations: enc.iter, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const out = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64d(enc.iv) }, key, b64d(enc.data));
+  return JSON.parse(new TextDecoder().decode(out));
+}
+function secretData() {
+  try { const s = sessionStorage.getItem("oblq-secret"); if (s) return JSON.parse(s); } catch {}
+  return null;
+}
+function useSecret(d) { Object.assign(DOWNLOADS, d.downloads || {}); return d.releases || []; }
+function showLock() {
+  grid.innerHTML = `<li class="lock"><p>Password required</p>
+    <form id="lockForm" autocomplete="off"><input id="lockPass" type="password" aria-label="Password" placeholder="Password"><button>Enter</button></form>
+    <span class="err" id="lockErr"></span></li>`;
+  const form = document.getElementById("lockForm"), input = document.getElementById("lockPass");
+  input.focus();
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = document.getElementById("lockErr"); err.textContent = "";
+    try {
+      const d = await decryptSecret(input.value);
+      try { sessionStorage.setItem("oblq-secret", JSON.stringify(d)); } catch {}
+      cache.secret = Promise.resolve(useSecret(d));
+      showTab();
+    } catch {
+      err.textContent = "Nope. Try again.";
+      const li = form.parentElement; li.classList.remove("shake"); void li.offsetWidth; li.classList.add("shake");
+      input.select();
+    }
+  });
+}
 const cache = {};
 
 function showTab() {
@@ -391,6 +445,11 @@ function showTab() {
   document.querySelectorAll(".brand").forEach(b => b.hidden = b.id !== "brand-" + key);
   document.title = TABS[key].title;
   document.getElementById("foot").textContent = TABS[key].foot;
+  if (TABS[key].locked && !cache[key]) {
+    const d = secretData();
+    if (!d) { WORKS = sorted = []; showLock(); return; }
+    cache[key] = Promise.resolve(useSecret(d));
+  }
   const load = cache[key] || (cache[key] = fetch(TABS[key].file, { cache: "no-cache" }).then(r => r.json()));
   load.then(data => {
     if ((TABS[location.hash.slice(1)] ? location.hash.slice(1) : "oblique") !== key) return;
@@ -441,8 +500,6 @@ window.addEventListener("hashchange", showTab);
 showTab();
 
 let lastFocus = null;
-let DOWNLOADS = {};
-fetch("downloads.json", { cache: "no-cache" }).then(r => r.json()).then(d => { DOWNLOADS = d; }).catch(() => {});
 
 function downloadsHTML(w) {
   const d = DOWNLOADS[w.id];
@@ -471,10 +528,10 @@ function openWork(i) {
       <div class="m-artist">${esc(w.artist)}</div>
       ${w.year ? `<div class="m-meta">${esc(w.year)}${w.type ? " · " + esc(w.type) : ""}</div>` : ""}
       ${w.role ? `<div class="credits"><div class="listen-label">My credits</div><ul>${w.role.split(/,\s*/).map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
-      <div class="listen">
+      ${w.secret && !links ? "" : `<div class="listen">
         <div class="listen-label">Listen on</div>
         ${links || `<div class="m-meta">Links coming soon.</div>`}
-      </div>
+      </div>`}
       ${downloadsHTML(w)}
     </div>`;
   lastFocus = document.activeElement;
