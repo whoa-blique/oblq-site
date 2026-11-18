@@ -1,0 +1,48 @@
+name: Deploy visit counter
+
+on:
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/counter.yml"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for Cloudflare secrets
+        id: check
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
+            echo "::warning::Cloudflare secrets not set yet; skipping counter deploy."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Carry over the current count
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          START=$(curl -fsS https://abacus.jasoncameron.dev/get/obliquemusicproduction/visits | sed -E 's/.*"value":([0-9]+).*/\1/' || true)
+          case "$START" in ''|*[!0-9]*) START=0;; esac
+          echo "Starting count: $START"
+          echo "START=$START" >> "$GITHUB_ENV"
+      - name: Deploy worker
+        if: steps.check.outputs.ready == 'true'
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: deploy --var START:${{ env.START }}
+      - name: Report URL
+        if: steps.check.outputs.ready == 'true'
+        env:
+          OUT: ${{ steps.deploy.outputs.command-output }}
+        run: |
+          URL=$(echo "$OUT" | grep -oE 'https://[a-z0-9.-]+\.workers\.dev' | head -1)
+          echo "::notice title=Counter URL::$URL"
