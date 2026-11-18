@@ -514,7 +514,7 @@ showTab();
 let lastFocus = null;
 
 function downloadsHTML(w) {
-  const d = DOWNLOADS[w.id];
+  const d = DOWNLOADS[w.id] || DOWNLOADS["title:" + String(w.title || "").toLowerCase()];
   if (!d) return "";
   const fmts = ["MP3", "WAV"];
   const zips = fmts.filter(f => d.zip && d.zip[f])
