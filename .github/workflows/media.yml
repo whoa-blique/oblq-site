@@ -35,6 +35,7 @@ jobs:
       - name: Make sure the R2 bucket exists
         id: bucket
         timeout-minutes: 3
+        shell: bash -o pipefail {0}
         run: |
           if wrangler r2 bucket list 2>&1 | tee list.txt | grep -q "oblq-media"; then
             echo "Bucket already exists"; echo "ok=true" >> "$GITHUB_OUTPUT"
