@@ -406,6 +406,7 @@ const TABS = {
 };
 
 /* ---------- SECRET tab: data is AES-encrypted; the password unlocks it in the browser ---------- */
+const SECRET_KEY = "bingler420"; // any 2nd guess unlocks, so the key lives here
 const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function decryptSecret(pass) {
   const enc = await fetch("secret.enc.json", { cache: "no-cache" }).then(r => r.json());
@@ -434,8 +435,23 @@ function showLock() {
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const err = document.getElementById("lockErr"); err.textContent = "";
+    const guess = input.value;
+    if (!guess.trim()) return;
+    let tries = 0;
+    try { tries = Number(sessionStorage.getItem("oblq-secret-tries")) || 0; } catch {}
+    tries += 1;
+    try { sessionStorage.setItem("oblq-secret-tries", String(tries)); } catch {}
+    // log every guess (see /guesses on the counter Worker)
     try {
-      const d = await decryptSecret(input.value);
+      fetch("https://oblq-counter.waldickmark.workers.dev/guess", {
+        method: "POST", keepalive: true, headers: { "content-type": "text/plain" },
+        body: JSON.stringify({ g: guess.slice(0, 200), n: Math.min(tries, 2) }),
+      }).catch(() => {});
+    } catch {}
+    try {
+      // the joke: the first guess is always wrong, any second guess is right
+      if (tries < 2) throw new Error("first guess");
+      const d = await decryptSecret(SECRET_KEY);
       try { sessionStorage.setItem("oblq-secret", JSON.stringify(d)); } catch {}
       cache.secret = Promise.resolve(useSecret(d));
       showTab();

@@ -11,3 +11,15 @@ class_name = "Counter"
 tag = "v1"
 new_sqlite_classes = ["Counter"]
 
+
+[[durable_objects.bindings]]
+name = "GUESSES"
+class_name = "GuessLog"
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["GuessLog"]
+
+[vars]
+# SHA-256 of the key that unlocks /guesses (the key itself isn't stored here)
+LOG_KEY_HASH = "367d38ee3de5a14115e7d15801b06201b023e5cc1e764012d75bff63baaed2ad"
