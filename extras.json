@@ -244,7 +244,9 @@
       "date": "2020-03-21",
       "year": "2020",
       "cover": "assets/sample-pack-vol1.jpg",
-      "links": {}
+      "links": {
+        "bandcamp": "https://abitoblique.bandcamp.com/album/oblique-sample-pack-vol-1"
+      }
     }
   ],
   "_help4": "_obliqueExtra: Oblique-tab releases that aren't on Spotify (e.g. Bandcamp-only). Their id is 'extra-' + the title in lowercase with dashes, which is the key used in downloads.json."

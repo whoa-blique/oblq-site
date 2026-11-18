@@ -73,6 +73,9 @@
   .lock.shake form { animation: shake .35s; }
   @keyframes shake { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }
 
+  .secret-note { max-width: 720px; margin: 0 auto 36px; padding: 22px 26px; border: 1px solid var(--line); color: #d8d8d8; font-size: 15px; line-height: 1.65; }
+  .secret-note p + p { margin-top: 12px; }
+
   /* ---------- Grid of works ---------- */
   main { max-width: 1100px; margin: 0 auto; padding: 0 var(--gap) 80px; }
   .grid {
@@ -306,6 +309,7 @@
 </nav>
 
 <main id="musicView">
+  <div class="secret-note" id="secretNote" hidden></div>
   <ul class="grid" id="grid"></ul>
 </main>
 
@@ -415,7 +419,12 @@ function secretData() {
   try { const s = sessionStorage.getItem("oblq-secret"); if (s) return JSON.parse(s); } catch {}
   return null;
 }
-function useSecret(d) { Object.assign(DOWNLOADS, d.downloads || {}); return d.releases || []; }
+function useSecret(d) {
+  Object.assign(DOWNLOADS, d.downloads || {});
+  SECRET_NOTE = (d.note || []).map(p => `<p>${esc(p)}</p>`).join("");
+  return d.releases || [];
+}
+let SECRET_NOTE = "";
 function showLock() {
   grid.innerHTML = `<li class="lock"><p>Password required</p>
     <form id="lockForm" autocomplete="off"><input id="lockPass" type="password" aria-label="Password" placeholder="Password"><button>Enter</button></form>
@@ -445,6 +454,8 @@ function showTab() {
   document.querySelectorAll(".brand").forEach(b => b.hidden = b.id !== "brand-" + key);
   document.title = TABS[key].title;
   document.getElementById("foot").textContent = TABS[key].foot;
+  const note = document.getElementById("secretNote");
+  note.hidden = true;
   if (TABS[key].locked && !cache[key]) {
     const d = secretData();
     if (!d) { WORKS = sorted = []; showLock(); return; }
@@ -454,6 +465,7 @@ function showTab() {
   load.then(data => {
     if ((TABS[location.hash.slice(1)] ? location.hash.slice(1) : "oblique") !== key) return;
     WORKS = data;
+    if (TABS[key].locked && SECRET_NOTE) { note.innerHTML = SECRET_NOTE; note.hidden = false; }
     sorted = [...WORKS].sort((a, b) => String(b.date).localeCompare(String(a.date)) || (a.order ?? 0) - (b.order ?? 0));
     render();
     if (!sorted.length) grid.innerHTML = '<li class="m-meta" style="grid-column:1/-1;text-align:center">New music coming soon.</li>';
