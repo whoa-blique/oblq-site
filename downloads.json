@@ -520,7 +520,9 @@
   ]
  },
  "3PVl6FS0zqrsSArl0KB47Y": {
-  "zip": {},
+  "zip": {
+   "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AF2mGBIwpp1GV66PLfcIoTg/Thanks%204%20Having%20Me%20%28MASTERS%29?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
+  },
   "tracks": [
    {
     "name": "DJ Quip Quatch Intro",
@@ -582,6 +584,11 @@
    "WAV": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AMGd_B4nFJ5IuSa0MphW4sk/HELLO%20EP%20MASTERS/WAV?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
   },
   "tracks": [
+   {
+    "name": "HELLO",
+    "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AD-Jrbpackq9EPx4PVpRl0E/HELLO%20EP%20MASTERS/MP3/HELLO%20%20%28Master%29.mp3?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1",
+    "WAV": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/ALo4ne4g-cErD5ALChXHybc/HELLO%20EP%20MASTERS/WAV/HELLO%20%20%28Master%29.wav?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
+   },
    {
     "name": "NEWS",
     "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AHOOyG57xI0YGkHNaUttTOI/HELLO%20EP%20MASTERS/MP3/NEWS.mp3?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1",
@@ -657,6 +664,46 @@
    {
     "name": "Day Dream (Instrumental)",
     "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AABuSD_qB22GkVdSQ3JVmLo/111%20Instrumentals/11.%20Day%20Dream%20%28Instrumental%29.mp3?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
+   }
+  ]
+ },
+ "61BRuY37rHt284oP6EDC3p": {
+  "zip": {},
+  "tracks": [
+   {
+    "name": "Head Up High",
+    "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AFasgkbZ-DriabfzGDWf4xw/Head%20Up%20High%20Masters/Head%20Up%20High%20%28Master%29.mp3?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1",
+    "WAV": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/ACQTp3MQRYamEPArDuL8S1M/Head%20Up%20High%20Masters/Head%20Up%20High%20%28Master%29.wav?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
+   }
+  ]
+ },
+ "5H7QPsiBX3q2dEfp7FUQoX": {
+  "zip": {},
+  "tracks": [
+   {
+    "name": "Never Finished",
+    "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AIg4UD4sriFn8S282kM4YKo/Never%20Finished%20MASTERS/Never%20Finished%20%28MASTER%29.mp3?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1",
+    "WAV": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AFsa9KFzQKLp11WOD7gl3zw/Never%20Finished%20MASTERS/Never%20Finished%20%28MASTER%29.wav?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
+   }
+  ]
+ },
+ "6B3TXRAOaAYShPFfLLh0SJ": {
+  "zip": {},
+  "tracks": [
+   {
+    "name": "In My Head",
+    "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AJoZQoygb0lQni-OgeB6OTU/In%20My%20Head%20%28MASTERS%29/In%20My%20Head%20%28MASTER%29.mp3?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1",
+    "WAV": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AHg6oamZfMa5U52XtunueK0/In%20My%20Head%20%28MASTERS%29/In%20My%20Head%20%28MASTER%29.wav?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
+   }
+  ]
+ },
+ "2IbKyQplxBKNDJvjJUFglS": {
+  "zip": {},
+  "tracks": [
+   {
+    "name": "No Stopping Me",
+    "MP3": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AGnuOsxD9U4NiG7yaWbQuUM/No%20Stopping%20Me%20MASTERS/No%20Stopping%20Me%20%28FINAL%29.mp3?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1",
+    "WAV": "https://www.dropbox.com/scl/fo/ein4udwdxcmeeu7j1lzb7/AIsA_c4ZxDwbWahnxZ9xllA/No%20Stopping%20Me%20MASTERS/No%20Stopping%20Me%20%28FINAL%29.wav?rlkey=etjebmtfwdk6lm2nbs1qafg9a&dl=1"
    }
   ]
  }
