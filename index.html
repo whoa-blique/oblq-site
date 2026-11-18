@@ -217,7 +217,10 @@
   .logo-wrap:has(.diamond:hover) .logo { filter: drop-shadow(0 0 10px rgba(255,255,255,.35)); }
   .diamond:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
   .pad-modal .pad-box { text-align: center; }
-  .pad-title { font-size: 11px; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; margin-bottom: 18px; }
+  .pad-bank { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 18px; }
+  .pad-title { font-size: 11px; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; min-width: 15em; text-align: center; }
+  .bank-arrow { background: none; border: 1px solid var(--line); color: var(--fg); width: 34px; height: 34px; font-size: 22px; line-height: 1; cursor: pointer; }
+  .bank-arrow:hover, .bank-arrow:focus-visible { background: var(--fg); color: var(--bg); }
   .pads {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
     width: min(420px, 86vw); margin: 0 auto;
@@ -293,10 +296,14 @@
 <div class="modal pad-modal" id="padModal" role="dialog" aria-modal="true" aria-label="Beat pad">
   <button class="close" id="padClose" aria-label="Close">×</button>
   <div class="pad-box">
-    <div class="pad-title">“For Your Love” Chopped</div>
+    <div class="pad-bank">
+      <button class="bank-arrow" id="bankPrev" aria-label="Previous sound bank">‹</button>
+      <div class="pad-title" id="padTitle" aria-live="polite">“For Your Love” Chopped</div>
+      <button class="bank-arrow" id="bankNext" aria-label="Next sound bank">›</button>
+    </div>
     <div class="pad-layout">
       <div class="pads" id="pads"></div>
-      <aside class="sheet-music" aria-label="Sheet music">
+      <aside class="sheet-music" id="sheetMusic" aria-label="Sheet music">
         <div class="sheet-label">Sheet Music</div>
         <div class="sheet-notes">qwwweassddzxxcc</div>
       </aside>
@@ -472,20 +479,36 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.clas
   const padsEl = document.getElementById("pads");
   padsEl.innerHTML = KEYS.map((k, i) => `<button class="pad" data-i="${i}" aria-label="Pad ${k}">${k}</button>`).join("");
   const padBtns = [...padsEl.children];
-  let ctx = null, buffers = [], loading = null, current = null;
+  // Sound banks: add another by putting 9 files in a new folder and adding a line here
+  const BANKS = [
+    { title: "\u201cFor Your Love\u201d Chopped", dir: "assets/pads", sheet: true },
+    { title: "\u201cDo U\u201d Chopped", dir: "assets/pads2", sheet: false },
+  ];
+  let ctx = null, bank = 0, current = null;
+  const bankBufs = BANKS.map(() => []), bankLoads = [];
+  let buffers = bankBufs[0];
 
   function load() {
-    if (loading) return loading;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    ctx = new AC();
-    loading = Promise.all(KEYS.map((_, i) =>
-      fetch(`assets/pads/pad${i + 1}.wav`).then(r => r.arrayBuffer())
-        .then(b => new Promise((res, rej) => ctx.decodeAudioData(b, res, rej)))
-        .then(buf => (buffers[i] = buf))
+    if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); }
+    if (bankLoads[bank]) return bankLoads[bank];
+    const b = bank, dir = BANKS[b].dir;
+    return (bankLoads[b] = Promise.all(KEYS.map((_, i) =>
+      fetch(`${dir}/pad${i + 1}.wav`).then(r => r.arrayBuffer())
+        .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
+        .then(buf => (bankBufs[b][i] = buf))
         .catch(() => {})
-    ));
-    return loading;
+    )));
   }
+  function setBank(n) {
+    if (current) { try { current.stop(); } catch {} current = null; }
+    bank = (n + BANKS.length) % BANKS.length;
+    buffers = bankBufs[bank];
+    document.getElementById("padTitle").textContent = BANKS[bank].title;
+    document.getElementById("sheetMusic").hidden = !BANKS[bank].sheet;
+    load();
+  }
+  document.getElementById("bankPrev").addEventListener("click", () => setBank(bank - 1));
+  document.getElementById("bankNext").addEventListener("click", () => setBank(bank + 1));
   function hit(i) {
     if (!ctx) load();
     if (ctx.state === "suspended") ctx.resume();
@@ -519,6 +542,8 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.clas
   document.addEventListener("keydown", e => {
     if (!padModal.classList.contains("open")) return;
     if (e.key === "Escape") return closePad();
+    if (e.key === "ArrowLeft") { e.preventDefault(); return setBank(bank - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); return setBank(bank + 1); }
     if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
     const i = KEYS.indexOf(e.key.toUpperCase());
     if (i >= 0) { e.preventDefault(); hit(i); }
