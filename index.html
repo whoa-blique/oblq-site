@@ -394,19 +394,32 @@ menuPanel.addEventListener("click", e => {
 document.addEventListener("click", e => { if (!menuPanel.hidden && !menuPanel.contains(e.target)) setMenu(false); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !menuPanel.hidden) setMenu(false); });
 
-/* ---------- Page visits counter (abacus.jasoncameron.dev) ---------- */
+/* ---------- Page visits counter (abacus.jasoncameron.dev, loaded as JSONP so it can't be blocked by CORS) ---------- */
 (() => {
-  const NS = "obliquemusicproduction", KEY = "visits";
+  const BASE = "https://abacus.jasoncameron.dev", NS = "obliquemusicproduction", KEY = "visits";
   let counted = false;
   try { counted = sessionStorage.getItem("oblq-counted") === "1"; } catch {}
-  fetch(`https://abacus.jasoncameron.dev/${counted ? "get" : "hit"}/${NS}/${KEY}`).then(r => r.json()).then(d => {
-    if (typeof d.value !== "number") return;
-    try { sessionStorage.setItem("oblq-counted", "1"); } catch {}
+  function show(v) {
     const od = document.getElementById("odometer");
-    od.innerHTML = [...String(d.value).padStart(7, "0")].map(n => `<b>${n}</b>`).join("");
-    od.setAttribute("aria-label", `${d.value} page visits`);
+    od.innerHTML = [...String(v).padStart(7, "0")].map(n => `<b>${n}</b>`).join("");
+    od.setAttribute("aria-label", `${v} page visits`);
     document.getElementById("visits").hidden = false;
-  }).catch(() => {});
+  }
+  function call(action, tries) {
+    const cb = "__oblqCount" + Date.now();
+    const s = document.createElement("script");
+    const done = ok => { delete window[cb]; s.remove(); if (!ok && tries > 1) setTimeout(() => call(action, tries - 1), 1500); };
+    window[cb] = d => {
+      if (d && typeof d.value === "number") {
+        if (action === "hit") try { sessionStorage.setItem("oblq-counted", "1"); } catch {}
+        show(d.value); done(true);
+      } else done(false);
+    };
+    s.onerror = () => done(false);
+    s.src = `${BASE}/${action}/${NS}/${KEY}?callback=${cb}`;
+    document.head.appendChild(s);
+  }
+  call(counted ? "get" : "hit", 3);
 })();
 
 window.addEventListener("hashchange", showTab);
