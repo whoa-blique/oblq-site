@@ -24,7 +24,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Start from the currently live data (used if Spotify fails)
+        run: |
+          for f in releases mythryx miraflores; do
+            curl -fsS "https://www.obliquemusicproduction.com/$f.json" -o "$f.json" || true
+          done
       - name: Pull releases from Spotify
+        timeout-minutes: 8
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}

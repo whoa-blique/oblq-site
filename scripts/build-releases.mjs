@@ -38,7 +38,9 @@ async function get(url, tok) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const r = await fetch(url, { headers: { Authorization: `Bearer ${tok}` } });
     if (r.status === 429) {
-      const wait = Number(r.headers.get("retry-after") || 2) * 1000;
+      const asked = Number(r.headers.get("retry-after") || 2);
+      if (asked > 30) throw new Error(`Spotify rate limit (asked to wait ${asked}s); keeping last data`);
+      const wait = asked * 1000;
       await new Promise(res => setTimeout(res, wait));
       continue;
     }
@@ -78,6 +80,7 @@ async function playlistItems(tok) {
     try {
       items.push({ track: await get(`https://api.spotify.com/v1/tracks/${id}?market=US`, tok) });
     } catch (e) {
+      if (/rate limit/i.test(e.message)) throw e; // don't publish a half-empty grid
       console.warn(`Skipping track ${id}: ${e.message}`);
       skipped.push(id);
     }
@@ -96,6 +99,7 @@ async function playlistItems(tok) {
       if (hit) items.push({ track: hit, extra: true });
       else notFound.push(s);
     } catch (e) {
+      if (/rate limit/i.test(e.message)) throw e;
       console.warn(`Search failed for ${s.track}: ${e.message}`);
       notFound.push({ ...s, error: e.message.slice(0, 200) });
     }
@@ -162,7 +166,7 @@ async function artistReleases(key, artistId, artistName, extraQueries = []) {
         if (list.length < 10) break;
       }
     }
-  } catch (e) { errors[key] = e.message.slice(0, 300); console.warn(`${key} search failed:`, e.message); }
+  } catch (e) { if (/rate limit/i.test(e.message)) throw e; errors[key] = e.message.slice(0, 300); console.warn(`${key} search failed:`, e.message); }
   return [...found.values()];
 }
 
