@@ -22,12 +22,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - name: Install tools
-        run: |
-          npm i -g wrangler@4 >/dev/null
-          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg jq >/dev/null
+      - name: Install wrangler
+        timeout-minutes: 5
+        run: npm i -g wrangler@4 --no-audit --no-fund
+      - name: Check the queue
+        id: q
+        run: echo "count=$(jq length media/queue.json)" >> "$GITHUB_OUTPUT"
+      - name: Install ffmpeg
+        if: steps.q.outputs.count != '0'
+        timeout-minutes: 5
+        uses: FedericoCarboni/setup-ffmpeg@v3
       - name: Make sure the R2 bucket exists
         id: bucket
+        timeout-minutes: 3
         run: |
           if wrangler r2 bucket list 2>&1 | tee list.txt | grep -q "oblq-media"; then
             echo "Bucket already exists"; echo "ok=true" >> "$GITHUB_OUTPUT"
@@ -43,6 +50,7 @@ jobs:
           fi
       - name: Deploy media server
         working-directory: media
+        timeout-minutes: 3
         run: |
           OUT=$(wrangler deploy 2>&1); echo "$OUT"
           URL=$(echo "$OUT" | grep -oE 'https://[a-z0-9.-]+\.workers\.dev' | head -1)
