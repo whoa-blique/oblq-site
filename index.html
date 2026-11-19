@@ -594,8 +594,12 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.clas
     { title: "\u201cFor Your Love\u201d Chopped", dir: "assets/pads", sheet: true },
     { title: "\u201cDo U\u201d Chopped", dir: "assets/pads2", sheet: false },
     { title: "\u201cKnocked\u201d Chopped", dir: "assets/pads3", sheet: false },
+    // free: pads (Q W E / A S D / Z X C = 0..8) that play over the chopped pads instead of cutting them off
+    { title: "\u201cBurnin\u201d Chopped", dir: "assets/pads4", sheet: false, free: [4, 5, 6, 7, 8] },
   ];
   let ctx = null, bank = 0, current = null;
+  const freeSrc = {};
+  const stopFree = () => { for (const k in freeSrc) { try { freeSrc[k].stop(); } catch {} delete freeSrc[k]; } };
   const bankBufs = BANKS.map(() => []), bankLoads = [];
   let buffers = bankBufs[0];
 
@@ -612,6 +616,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.clas
   }
   function setBank(n) {
     if (current) { try { current.stop(); } catch {} current = null; }
+    stopFree();
     bank = (n + BANKS.length) % BANKS.length;
     buffers = bankBufs[bank];
     document.getElementById("padTitle").textContent = BANKS[bank].title;
@@ -624,9 +629,15 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.clas
     if (!ctx) load();
     if (ctx.state === "suspended") ctx.resume();
     const buf = buffers[i];
-    // Monophonic: stop whatever is playing before starting the new hit
-    if (current) { try { current.stop(); } catch {} current = null; }
-    if (buf) { const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(); current = s; s.onended = () => { if (current === s) current = null; }; }
+    if ((BANKS[bank].free || []).includes(i)) {
+      // Drum pads: layer over the chopped pads; only re-hitting the same drum cuts it off
+      if (freeSrc[i]) { try { freeSrc[i].stop(); } catch {} }
+      if (buf) { const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(); freeSrc[i] = s; s.onended = () => { if (freeSrc[i] === s) delete freeSrc[i]; }; }
+    } else {
+      // Monophonic: stop whatever is playing before starting the new hit
+      if (current) { try { current.stop(); } catch {} current = null; }
+      if (buf) { const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(); current = s; s.onended = () => { if (current === s) current = null; }; }
+    }
     const b = padBtns[i];
     b.classList.remove("hit"); void b.offsetWidth; b.classList.add("hit");
     clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove("hit"), 110);
